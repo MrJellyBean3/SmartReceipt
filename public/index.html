@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload and Check File</title>
+    <style>
+        body {
+            background-color: #0042FF; /* PS4 blue color */
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        #loading {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Upload File</h1>
+    <form id="upload-form" enctype="multipart/form-data">
+        <input type="file" id="file-input" name="file" accept="image/*">
+        <button type="submit">Upload</button>
+    </form>
+
+    <div id="loading">
+        <h2>Uploading...</h2>
+        <img src="loading.gif"> <!-- replace with your loading gif -->
+    </div>
+
+    <div id="check-section" style="display: none";>
+        <h1></h1>
+        <img id="preview" style="display: none;">
+    </div>
+
+    <script>
+        // Path to the graph image file
+        const filePath = '/graph-dir/graph.PNG';
+
+        // Function to check if the file exists
+        async function checkFile() {
+            const response = await fetch('/check-file');
+            const { fileExists } = await response.json();
+            if (fileExists) {
+                const preview = document.getElementById('preview');
+                preview.src = filePath;
+                preview.style.display = 'block';
+                document.getElementById('loading').style.display = 'none';
+
+                // Show the check-section div when the file exists
+                const checkSection = document.getElementById('check-section');
+                checkSection.style.display = 'block';
+
+                clearInterval(checkInterval);  // stop checking if the file is found
+            }
+        }
+
+        // Check if the file exists every 5 seconds
+        let checkInterval;
+
+        document.getElementById('upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('file-input');
+            if (!fileInput.files.length) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            document.getElementById('loading').style.display = 'block'; // show loading symbol
+
+            const response = await fetch('/upload', { method: 'POST', body: formData });
+            if (!response.ok) {
+                alert('Failed to upload file.');
+                return;
+            }
+
+            // Start checking for the graph file after upload has been completed
+            checkInterval = setInterval(checkFile, 5000);
+        });
+    </script>
+</body>
+</html>
